@@ -44,7 +44,7 @@ jobs:
                   -DANDROID_ARM_NEON=ON \
                   -DCMAKE_BUILD_TYPE=Release \
                   -DCMAKE_INSTALL_PREFIX=build/install \
-                  -DJava_ROOT=${JAVA_HOME_8_amd64} \
+                  -DJava_ROOT=${JAVA_HOME_8_X64} \
                   .
 
             - name: Build
