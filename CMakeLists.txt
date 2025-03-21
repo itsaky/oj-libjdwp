@@ -94,7 +94,6 @@ list(REMOVE_ITEM JDI_SUPPORT_SOURCES
     # We don't support process attachment and lack some of the classes to even compile this file.
     ${CMAKE_CURRENT_SOURCE_DIR}/src/share/classes/com/sun/tools/jdi/ProcessAttachingConnector.java
 )
-message(STATUS "SOURCES : ${JDI_SUPPORT_SOURCES}")
 set(CMAKE_JAVA_COMPILE_FLAGS ${CMAKE_JAVA_COMPILE_FLAGS} -g)
 set(JDI_SUPPORT_RESOURCES ${CMAKE_CURRENT_BINARY_DIR}/jdi-support/resources)
 set(JDI_SUPPORT_METAINF_SERVICES ${JDI_SUPPORT_RESOURCES}/META-INF/services)
