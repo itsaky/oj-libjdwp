@@ -43,6 +43,7 @@ add_dependencies(iconv_static libiconv)
 set_target_properties(iconv_static PROPERTIES
   IMPORTED_LOCATION "${ICONV_PREFIX_DIR}/lib/libiconv.a"
   INTERFACE_INCLUDE_DIRECTORIES "${ICONV_PREFIX_DIR}/include"
+  OUTPUT_NAME iconv
 )
 
 add_library(iconv_shared STATIC IMPORTED)
@@ -50,4 +51,5 @@ add_dependencies(iconv_shared libiconv)
 set_target_properties(iconv_shared PROPERTIES
   IMPORTED_LOCATION "${ICONV_PREFIX_DIR}/lib/libiconv.so"
   INTERFACE_INCLUDE_DIRECTORIES "${ICONV_PREFIX_DIR}/include"
+  OUTPUT_NAME iconv
 )

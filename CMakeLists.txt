@@ -62,9 +62,15 @@ target_link_libraries(npt iconv_static)
 
 add_library(npt_shared SHARED $<TARGET_OBJECTS:npt>)
 target_link_libraries(npt_shared PRIVATE iconv_shared)
+set_target_properties(npt_shared PROPERTIES
+  OUTPUT_NAME npt
+)
 
 add_library(npt_static STATIC $<TARGET_OBJECTS:npt>)
 target_link_libraries(npt_static PRIVATE iconv_static)
+set_target_properties(npt_static PROPERTIES
+  OUTPUT_NAME npt
+)
 
 # Build libjdwp
 file(GLOB JDWP_SOURCES src/share/back/*.c src/solaris/back/*.c)
@@ -83,7 +89,13 @@ target_compile_options(jdwp PRIVATE
     -Wno-unused-function)
 
 add_library(jdwp_shared SHARED $<TARGET_OBJECTS:jdwp>)
+set_target_properties(jdwp_shared PROPERTIES
+  OUTPUT_NAME jdwp
+)
 add_library(jdwp_static STATIC $<TARGET_OBJECTS:jdwp>)
+set_target_properties(jdwp_static PROPERTIES
+  OUTPUT_NAME jdwp
+)
 
 # Build libdt_socket
 file(GLOB DTSOCKET_SOURCES src/share/transport/socket/*.c src/solaris/transport/socket/*.c)
@@ -96,7 +108,13 @@ include_directories(dt_socket src/share/transport/socket
     ${NPT_HEADERS})
 
 add_library(dt_socket_shared SHARED $<TARGET_OBJECTS:dt_socket>)
+set_target_properties(dt_socket_shared PROPERTIES
+  OUTPUT_NAME dt_socket
+)
 add_library(dt_socket_static STATIC $<TARGET_OBJECTS:dt_socket>)
+set_target_properties(dt_socket_static PROPERTIES
+  OUTPUT_NAME dt_socket
+)
 
 # Build jdi-support
 file(GLOB_RECURSE JDI_SUPPORT_SOURCES
