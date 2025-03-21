@@ -2,6 +2,9 @@ include(ExternalProject)
 include(${CMAKE_TOOLCHAIN_FILE})
 
 set(ICONV_CC ${NDK_ABI_${ANDROID_ABI}_TRIPLE}${ANDROID_NATIVE_API_LEVEL}-clang)
+if(${ANDROID_ABI} STREQUAL "armeabi-v7a")
+  set(ICONV_CC armv7a-linux-androideabi${ANDROID_NATIVE_API_LEVEL}-clang)
+endif()
 set(ICONV_CXX ${ICONV_CC}++)
 set(ICONV_ENVS CC=${ICONV_CC}
   CXX=${ICONV_CXX}
