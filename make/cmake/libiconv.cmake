@@ -1,27 +1,50 @@
 include(ExternalProject)
+include(${CMAKE_TOOLCHAIN_FILE})
 
+set(ICONV_CC ${NDK_ABI_${ANDROID_ABI}_TRIPLE}${ANDROID_NATIVE_API_LEVEL}-clang)
+set(ICONV_CXX ${ICONV_CC}++)
+set(ICONV_ENVS CC=${ICONV_CC}
+  CXX=${ICONV_CXX}
+  AR=${ANDROID_AR}
+  RANLIB=${ANDROID_RANLIB}
+  STRIP=${CMAKE_STRIP})
 set(ICONV_VERSION "1.17")
 set(ICONV_SOURCE "https://ftp.gnu.org/pub/gnu/libiconv/libiconv-${ICONV_VERSION}.tar.gz")
-set(ICONV_HOST_TRIPLE "${NDK_ABI_${ANDROID_ABI}_TRIPLE}")
-set(ICONV_PREFIX_DIR "${CMAKE_CURRENT_BINARY_DIR}/libiconv-prefix")
+set(ICONV_PREFIX_DIR "${CMAKE_CURRENT_BINARY_DIR}/libiconv")
 
-set(ICONV_CONFIGURE_ARGS --host=${ICONV_HOST_TRIPLE}
-                         --enable-static
-                         --prefix=${ICONV_PREFIX_DIR})
-# Create the include directory before CMake configuration
+set(ICONV_CONFIGURE_ARGS --host=${CMAKE_LIBRARY_ARCHITECTURE}
+  --enable-extra-encodings
+  --prefix=${ICONV_PREFIX_DIR}
+  --with-sysroot=${CMAKE_SYSROOT})
+
+set(ICONV_CONFIGURE_STATIC_ARGS ${ICONV_CONFIGURE_ARGS} --enable-static)
+
+set(ICONV_CONFIGURE_COMMAND ${ICONV_ENVS}
+  <SOURCE_DIR>/configure ${ICONV_CONFIGURE_ARGS})
+
+set(ICONV_BUILD_COMMAND ${ICONV_ENVS} make)
+
 file(MAKE_DIRECTORY "${ICONV_PREFIX_DIR}/include")
 
 ExternalProject_Add(
-    libiconv
-    URL ${ICONV_SOURCE}
-    CONFIGURE_COMMAND <SOURCE_DIR>/configure ${ICONV_CONFIGURE_ARGS}
-    BUILD_IN_SOURCE 1
+  libiconv
+  URL ${ICONV_SOURCE}
+  CONFIGURE_COMMAND ${ICONV_CONFIGURE_COMMAND}
+  BUILD_COMMAND ${ICONV_BUILD_COMMAND}
+  BUILD_IN_SOURCE 1
+  BUILD_BYPRODUCTS "${ICONV_PREFIX_DIR}/lib/libiconv.a" "${ICONV_PREFIX_DIR}/lib/libiconv.so"
 )
 
-add_library(iconv STATIC IMPORTED)
-set_target_properties(iconv PROPERTIES
+add_library(iconv_static STATIC IMPORTED)
+add_dependencies(iconv_static libiconv)
+set_target_properties(iconv_static PROPERTIES
   IMPORTED_LOCATION "${ICONV_PREFIX_DIR}/lib/libiconv.a"
   INTERFACE_INCLUDE_DIRECTORIES "${ICONV_PREFIX_DIR}/include"
 )
 
-add_dependencies(iconv libiconv)
+add_library(iconv_shared STATIC IMPORTED)
+add_dependencies(iconv_shared libiconv)
+set_target_properties(iconv_shared PROPERTIES
+  IMPORTED_LOCATION "${ICONV_PREFIX_DIR}/lib/libiconv.so"
+  INTERFACE_INCLUDE_DIRECTORIES "${ICONV_PREFIX_DIR}/include"
+)
