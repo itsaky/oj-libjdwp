@@ -57,6 +57,7 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
+          name: oj-libjdwp-${{ matrix.abi }}
           path: |
             build/*.jar
             build/*.so
