@@ -125,12 +125,7 @@ list(REMOVE_ITEM JDI_SUPPORT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/share/classes/com/sun/tools/jdi/ProcessAttachingConnector.java
 )
 set(CMAKE_JAVA_COMPILE_FLAGS ${CMAKE_JAVA_COMPILE_FLAGS} -g)
-set(JDI_SUPPORT_RESOURCES ${CMAKE_CURRENT_BINARY_DIR}/jdi-support/resources)
-set(JDI_SUPPORT_METAINF_SERVICES ${JDI_SUPPORT_RESOURCES}/META-INF/services)
-set(JDI_SUPPORT_METAINF_SERVICE_CONNECTOR ${JDI_SUPPORT_METAINF_SERVICES}/com.sun.jdi.connect.Connector)
-file(MAKE_DIRECTORY ${JDI_SUPPORT_METAINF_SERVICES})
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/etc/com.sun.jdi.connect.Connector ${JDI_SUPPORT_METAINF_SERVICE_CONNECTOR} COPYONLY)
 add_jar(jdi-support
     SOURCES ${JDI_SUPPORT_SOURCES} ${JDWP_GEN_JDI_OUT} ${JDI_PROP_OUT}
-    RESOURCES NAMESPACE "META-INF/services" ${JDI_SUPPORT_RESOURCES})
+    RESOURCES NAMESPACE "META-INF/services" ${CMAKE_CURRENT_SOURCE_DIR}/etc/com.sun.jdi.connect.Connector)
 add_dependencies(jdi-support jdwpgen_jdi jdwp_jdi_propgen)
