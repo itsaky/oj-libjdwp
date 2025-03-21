@@ -54,6 +54,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
             path: |
+              build/*.jar
               build/*.so
               build/*.a
               build/libiconv/lib/*.so
