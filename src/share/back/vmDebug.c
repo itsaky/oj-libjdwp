@@ -24,6 +24,7 @@
  */
 
 #include <stdatomic.h>
+#include <sys/system_properties.h>
 
 #include "vmDebug.h"
 
@@ -125,32 +126,44 @@ vmDebug_initalize(JNIEnv* env)
             goto finish;
         }
 
-        JNINativeMethod methods[4];
+        {
+            jint count = 4;
+            long android_sdk_int = android_get_device_api_level();
+            TTY_MESSAGE(("Running on Android API %d", android_sdk_int));
+            if (android_sdk_int < 34) {
+                // suspendAllAndSendVmStart was added in API 34 (Android 14)
+                count = 3;
+            }
 
-        // Take over the implementation of these functions.
-        methods[0].name = "lastDebuggerActivity";
-        methods[0].signature = "()J";
-        methods[0].fnPtr = (void*)VMDebug_lastDebuggerActivity;
+            JNINativeMethod methods[count];
 
-        methods[1].name = "isDebuggingEnabled";
-        methods[1].signature = "()Z";
-        methods[1].fnPtr = (void*)VMDebug_isDebuggingEnabled;
+            // Take over the implementation of these functions.
+            methods[0].name = "lastDebuggerActivity";
+            methods[0].signature = "()J";
+            methods[0].fnPtr = (void *) VMDebug_lastDebuggerActivity;
 
-        methods[2].name = "isDebuggerConnected";
-        methods[2].signature = "()Z";
-        methods[2].fnPtr = (void*)VMDebug_isDebuggerConnected;
+            methods[1].name = "isDebuggingEnabled";
+            methods[1].signature = "()Z";
+            methods[1].fnPtr = (void *) VMDebug_isDebuggingEnabled;
 
-        methods[3].name = "suspendAllAndSendVmStart";
-        methods[3].signature = "()V";
-        methods[3].fnPtr = (void*)VMDebug_suspendAllAndSendVmStart;
+            methods[2].name = "isDebuggerConnected";
+            methods[2].signature = "()Z";
+            methods[2].fnPtr = (void *) VMDebug_isDebuggerConnected;
 
-        jint res = JNI_FUNC_PTR(env,RegisterNatives)(env,
-                                                     vmdebug_class,
-                                                     methods,
-                                                     sizeof(methods) / sizeof(JNINativeMethod));
-        if (res != JNI_OK) {
-            EXIT_ERROR(JVMTI_ERROR_INTERNAL,
-                       "RegisterNatives returned failure for VMDebug class");
+            if (android_sdk_int >= 34) {
+                methods[3].name = "suspendAllAndSendVmStart";
+                methods[3].signature = "()V";
+                methods[3].fnPtr = (void *) VMDebug_suspendAllAndSendVmStart;
+            }
+
+            jint res = JNI_FUNC_PTR(env, RegisterNatives)(env,
+                                                          vmdebug_class,
+                                                          methods,
+                                                          count);
+            if (res != JNI_OK) {
+                EXIT_ERROR(JVMTI_ERROR_INTERNAL,
+                           "RegisterNatives returned failure for VMDebug class");
+            }
         }
 
         finish: ;
