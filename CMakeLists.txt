@@ -18,14 +18,14 @@ set(JDWP_GEN_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/jdwpgen_include)
 set(JDWP_GEN_HEADER_FILE ${JDWP_GEN_HEADERS}/JDWPCommands.h)
 file(MAKE_DIRECTORY ${JDWP_GEN_HEADERS})
 add_jar_run_command(jdwpgen jdwpgen_includes ${JDWP_GEN_HEADER_FILE}
-    ${CMAKE_SOURCE_DIR}/make/data/jdwp/jdwp.spec -include ${JDWP_GEN_HEADER_FILE})
+    ${CMAKE_CURRENT_SOURCE_DIR}/make/data/jdwp/jdwp.spec -include ${JDWP_GEN_HEADER_FILE})
 
 # Build JDWP.java from JDWP spec
 set(JDWP_GEN_JDI ${CMAKE_CURRENT_BINARY_DIR}/jdwpgen_jdi)
 set(JDWP_GEN_JDI_OUT ${JDWP_GEN_JDI}/JDWP.java)
 file(MAKE_DIRECTORY ${JDWP_GEN_JDI})
 add_jar_run_command(jdwpgen jdwpgen_jdi ${JDWP_GEN_JDI_OUT}
-    ${CMAKE_SOURCE_DIR}/make/data/jdwp/jdwp.spec -jdi ${JDWP_GEN_JDI_OUT})
+    ${CMAKE_CURRENT_SOURCE_DIR}/make/data/jdwp/jdwp.spec -jdi ${JDWP_GEN_JDI_OUT})
 
 # Build jdwp messages classes from jdwp.properties
 set(JDI_PROP ${CMAKE_CURRENT_BINARY_DIR}/jdwp_prop)
@@ -34,7 +34,7 @@ set(JDI_PROP_OUT ${JDI_PROP}/jdi.java)
 file(MAKE_DIRECTORY ${JDI_PROP})
 add_custom_command(
     OUTPUT ${JDI_PROP_OUT}
-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/etc/jdigen.py ${JDI_PROP_IN} ${JDI_PROP_OUT}
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/etc/jdigen.py ${JDI_PROP_IN} ${JDI_PROP_OUT}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Generating jdi.java with Python script"
 )
