@@ -2,5 +2,6 @@ JTwork
 JTreport
 *.class
 .idea/workspace.xml
+.vscode
 idea/java/.idea/workspace.xml
 /build/

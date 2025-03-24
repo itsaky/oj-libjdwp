@@ -32,6 +32,8 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <android/log.h>
+
 #include "jni.h"
 
 #include "utf.h"
@@ -42,7 +44,7 @@
 void
 utfError(char *file, int line, char *message)
 {
-    (void)fprintf(stderr, "UTF ERROR [\"%s\":%d]: %s\n", file, line, message);
+    __android_log_print(ANDROID_LOG_ERROR, "LocalJDWP-utfError", "UTF ERROR [\"%s\":%d]: %s\n", file, line, message);
     abort();
 }
 

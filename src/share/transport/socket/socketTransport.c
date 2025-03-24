@@ -28,6 +28,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include <android/log.h>
+
 #include "jdwpTransport.h"
 #include "sysSocket.h"
 
@@ -395,7 +397,7 @@ socketTransport_accept(jdwpTransportEnv* env, jlong acceptTimeout, jlong handsha
          * timeout then we must adjust the timeout for the next poll.
          */
         if (err) {
-            fprintf(stderr, "Debugger failed to attach: %s\n", getLastError());
+            __android_log_print(ANDROID_LOG_ERROR, "LocalJDWP-dt_socket", "Debugger failed to attach: %s\n", getLastError());
             dbgsysSocketClose(socketFD);
             socketFD = -1;
             if (acceptTimeout > 0) {

@@ -45,6 +45,7 @@
 
 #include <stdarg.h>
 #include <errno.h>
+#include <android/log.h>
 
 #include "util.h"
 #include "proc_md.h"
@@ -85,13 +86,18 @@ vprint_message(FILE *fp, const char *prefix, const char *suffix,
  *          Do not use the ERROR* macros here.
  */
 void
-print_message(FILE *fp, const char *prefix,  const char *suffix,
+print_message(FILE *fp, const char *prefix, const char *suffix,
               const char *format, ...)
 {
     va_list ap;
-
     va_start(ap, format);
-    vprint_message(fp, prefix, suffix, format, ap);
+
+    char new_format[1024];
+    snprintf(new_format, sizeof(new_format), "%s%s%s",
+             prefix != NULL ? prefix : "",
+             format,
+             suffix != NULL ? suffix : "");
+    __android_log_vprint(ANDROID_LOG_INFO, "LocalJDWP", new_format, ap);
     va_end(ap);
 }
 
@@ -102,7 +108,7 @@ error_message(const char *format, ...)
     va_list ap;
 
     va_start(ap, format);
-    vprint_message(stderr, "ERROR: ", "\n", format, ap);
+    __android_log_vprint(ANDROID_LOG_ERROR, "LocalJDWP", format, ap);
     va_end(ap);
     if ( gdata->doerrorexit ) {
         EXIT_ERROR(AGENT_ERROR_INTERNAL,"Requested errorexit=y exit()");
@@ -114,11 +120,9 @@ void
 tty_message(const char *format, ...)
 {
     va_list ap;
-
     va_start(ap, format);
-    vprint_message(stdout, "", "\n", format, ap);
+    __android_log_vprint(ANDROID_LOG_INFO, "LocalJDWP", format, ap);
     va_end(ap);
-    (void)fflush(stdout);
 }
 
 /* Print assertion error message to stderr. */

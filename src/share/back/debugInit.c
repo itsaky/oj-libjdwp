@@ -24,6 +24,7 @@
  */
 
 #include <ctype.h>
+#include <android/log.h>
 
 #include "util.h"
 #include "commonRef.h"

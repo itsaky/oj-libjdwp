@@ -31,13 +31,14 @@
 #define NPT_VERSION "0.0.0"
 
 #include <stdio.h>
+#include <android/log.h>
 
 #include "jni.h"
 
 #include "npt_md.h"
 #include "utf.h"
 
-#define NPT_ERROR(s) { (void)fprintf(stderr, "NPT ERROR: %s\n", s); exit(1); }
+#define NPT_ERROR(s) { (void)__android_log_print(ANDROID_LOG_ERROR, "LocalJDWP-NPT", "NPT ERROR: %s\n", s); exit(1); }
 
 #ifdef __cplusplus
 extern "C" {

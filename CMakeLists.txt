@@ -61,7 +61,7 @@ include_directories(npt ${JAVA_VM_HEADERS} ${NPT_HEADERS})
 target_link_libraries(npt iconv_static)
 
 add_library(npt_shared SHARED $<TARGET_OBJECTS:npt>)
-target_link_libraries(npt_shared PRIVATE iconv_shared)
+target_link_libraries(npt_shared PRIVATE iconv_shared log)
 set_target_properties(npt_shared PROPERTIES
   OUTPUT_NAME npt
 )
@@ -89,6 +89,7 @@ target_compile_options(jdwp PRIVATE
     -Wno-unused-function)
 
 add_library(jdwp_shared SHARED $<TARGET_OBJECTS:jdwp>)
+target_link_libraries(jdwp_shared log)
 set_target_properties(jdwp_shared PROPERTIES
   OUTPUT_NAME jdwp
 )
@@ -108,6 +109,7 @@ include_directories(dt_socket src/share/transport/socket
     ${NPT_HEADERS})
 
 add_library(dt_socket_shared SHARED $<TARGET_OBJECTS:dt_socket>)
+target_link_libraries(dt_socket_shared log)
 set_target_properties(dt_socket_shared PROPERTIES
   OUTPUT_NAME dt_socket
 )
