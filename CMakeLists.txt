@@ -41,7 +41,11 @@ add_custom_command(
 add_custom_target(jdwp_jdi_propgen
     DEPENDS ${JDI_PROP_OUT})
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_LITTLE_ENDIAN -Wall -Wno-unused-parameter -Wno-unused-but-set-variable")
+set(C_FLAGS -D_LITTLE_ENDIAN -Wall -Wno-unused-parameter -Wno-unused-but-set-variable)
+
+if(DEFINED ANDROID_NATIVE_LIB_SEARCH_PATH)
+    set(C_FLAGS ${C_FLAGS} "-DANDROID_NATIVE_LIB_SEARCH_PATH=${ANDROID_NATIVE_LIB_SEARCH_PATH}")
+endif()
 
 set(JAVA_VM_HEADERS src/share/javavm/export
     src/solaris/javavm/export)
@@ -56,28 +60,19 @@ set(JDWP_HEADERS src/share/back
 
 # Build libnpt
 file(GLOB NPT_SOURCES src/share/npt/*.c src/solaris/npt/*.c)
-add_library(npt OBJECT ${NPT_SOURCES})
+add_library(npt SHARED ${NPT_SOURCES})
 include_directories(npt ${JAVA_VM_HEADERS} ${NPT_HEADERS})
-target_link_libraries(npt iconv_static)
-
-add_library(npt_shared SHARED $<TARGET_OBJECTS:npt>)
-target_link_libraries(npt_shared PRIVATE iconv_shared log)
-set_target_properties(npt_shared PROPERTIES
-  OUTPUT_NAME npt
-)
-
-add_library(npt_static STATIC $<TARGET_OBJECTS:npt>)
-target_link_libraries(npt_static PRIVATE iconv_static)
-set_target_properties(npt_static PROPERTIES
-  OUTPUT_NAME npt
-)
+target_link_libraries(npt iconv log)
+target_compile_options(npt PRIVATE ${C_FLAGS})
 
 # Build libjdwp
 file(GLOB JDWP_SOURCES src/share/back/*.c src/solaris/back/*.c)
-add_library(jdwp OBJECT ${JDWP_SOURCES})
+add_library(jdwp SHARED ${JDWP_SOURCES})
 add_dependencies(jdwp jdwpgen_includes jdwpgen_jdi)
 include_directories(jdwp ${JDWP_HEADERS})
+target_link_libraries(jdwp log)
 target_compile_options(jdwp PRIVATE
+    ${C_FLAGS}
     -DLINUX
     -DJDWP_LOGGING
     -Wno-switch
@@ -88,35 +83,16 @@ target_compile_options(jdwp PRIVATE
     -Wno-unused-variable
     -Wno-unused-function)
 
-add_library(jdwp_shared SHARED $<TARGET_OBJECTS:jdwp>)
-target_link_libraries(jdwp_shared log)
-set_target_properties(jdwp_shared PROPERTIES
-  OUTPUT_NAME jdwp
-)
-add_library(jdwp_static STATIC $<TARGET_OBJECTS:jdwp>)
-set_target_properties(jdwp_static PROPERTIES
-  OUTPUT_NAME jdwp
-)
-
 # Build libdt_socket
 file(GLOB DTSOCKET_SOURCES src/share/transport/socket/*.c src/solaris/transport/socket/*.c)
-add_library(dt_socket OBJECT ${DTSOCKET_SOURCES})
+add_library(dt_socket SHARED ${DTSOCKET_SOURCES})
 add_dependencies(dt_socket jdwpgen_includes)
+target_link_libraries(dt_socket log)
 include_directories(dt_socket src/share/transport/socket
     src/solaris/transport/socket
     ${JAVA_VM_HEADERS}
     ${JDWP_HEADERS}
     ${NPT_HEADERS})
-
-add_library(dt_socket_shared SHARED $<TARGET_OBJECTS:dt_socket>)
-target_link_libraries(dt_socket_shared log)
-set_target_properties(dt_socket_shared PROPERTIES
-  OUTPUT_NAME dt_socket
-)
-add_library(dt_socket_static STATIC $<TARGET_OBJECTS:dt_socket>)
-set_target_properties(dt_socket_static PROPERTIES
-  OUTPUT_NAME dt_socket
-)
 
 # Build jdi-support
 file(GLOB_RECURSE JDI_SUPPORT_SOURCES
