@@ -44,7 +44,7 @@
         if ( (pnpt) == NULL ) NPT_ERROR("NptEnv* is NULL");             \
         *(pnpt) = NULL;                                                 \
         _handle =  dlopen(path, RTLD_LAZY);                             \
-        if ( _handle == NULL ) NPT_ERROR("Cannot open library");        \
+        if ( _handle == NULL ) NPT_ERROR(dlerror());        \
         _sym = dlsym(_handle, "nptInitialize");                         \
         if ( _sym == NULL ) NPT_ERROR("Cannot find nptInitialize");     \
         ((NptInitialize)_sym)((pnpt), version, (options));              \
