@@ -4,7 +4,7 @@ find_package(Java COMPONENTS Development)
 find_package(JNI REQUIRED)
 
 if(NOT ${Java_VERSION_MAJOR} EQUAL "1" AND NOT ${Java_VERSION_MINOR} EQUAL "8")
-    message(FATAL_ERROR "${CMAKE_PROJECT_NAME} requires JDK 8 to build")
+    message(FATAL_ERROR "${CMAKE_PROJECT_NAME} requires JDK 8 to build. Please set 'Java_ROOT' envrionment/cmake to provide path to JDK 8")
 endif()
 
 include(UseJava)
