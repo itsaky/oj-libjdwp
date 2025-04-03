@@ -98,15 +98,6 @@ dbgsysBuildFunName(char *name, int nameLen, int args_size, int encodingIndex)
 void
 dbgsysBuildLibName(char *holder, int holderlen, const char *pname, const char *fname)
 {
-#ifdef ANDROID_NATIVE_LIB_SEARCH_PATH
-#define AS_STR(name) #name
-#define LIB_PATH(name) AS_STR(name)
-#define LIB_SEARCH_PATH LIB_PATH(ANDROID_NATIVE_LIB_SEARCH_PATH)
-
-    snprintf(holder, holderlen, "%s/lib%s." LIB_SUFFIX, LIB_SEARCH_PATH, fname);
-
-#else
-
     const int pnamelen = pname ? strlen(pname) : 0;
 
     *holder = '\0';
@@ -120,8 +111,6 @@ dbgsysBuildLibName(char *holder, int holderlen, const char *pname, const char *f
     } else {
       dll_build_name(holder, holderlen, pname, fname);
     }
-
-#endif // ANDROID_NATIVE_LIB_SEARCH_PATH
 }
 
 #ifndef NATIVE
