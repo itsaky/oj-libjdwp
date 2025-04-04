@@ -1,6 +1,11 @@
 include(ExternalProject)
 include(${CMAKE_TOOLCHAIN_FILE})
 
+if(NOT DEFINED NDK_DEFAULT_ABIS)
+        get_filename_component(TOOLCHAIN_DIR "${CMAKE_TOOLCHAIN_FILE}/.." ABSOLUTE)
+        include(${TOOLCHAIN_DIR}/abis.cmake)
+endif()
+
 set(ICONV_CC ${NDK_ABI_${ANDROID_ABI}_TRIPLE}${ANDROID_NATIVE_API_LEVEL}-clang)
 if(${ANDROID_ABI} STREQUAL "armeabi-v7a")
         set(ICONV_CC armv7a-linux-androideabi${ANDROID_NATIVE_API_LEVEL}-clang)
