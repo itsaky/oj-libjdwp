@@ -27,10 +27,13 @@ set(ICONV_CONFIGURE_ARGS --host=${CMAKE_LIBRARY_ARCHITECTURE}
         --with-sysroot=${CMAKE_SYSROOT}
         --enable-static)
 
-set(ICONV_CONFIGURE_COMMAND ${ICONV_ENVS}
+set(ICONV_CONFIGURE_COMMAND
+        ${CMAKE_COMMAND} -E env ${ICONV_ENVS} --
         <SOURCE_DIR>/configure)
 
-set(ICONV_BUILD_COMMAND ${ICONV_ENVS} make)
+set(ICONV_BUILD_COMMAND
+        ${CMAKE_COMMAND} -E env ${ICONV_ENVS} --
+        make)
 
 file(MAKE_DIRECTORY "${ICONV_PREFIX_DIR}/include")
 
