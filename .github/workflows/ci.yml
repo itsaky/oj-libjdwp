@@ -30,10 +30,18 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: brew install cmake ninja python3
 
-      - name: Install JDK
+      - name: Install JDK (Linux/Windows)
+        if: matrix.os != 'macos-latest'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
+          java-version: 8
+
+      - name: Install JDK (MacOS)
+        if: matrix.os == 'macos-latest'
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
           java-version: 8
 
       - name: Setup NDK
