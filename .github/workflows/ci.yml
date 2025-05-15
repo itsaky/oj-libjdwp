@@ -92,29 +92,29 @@ jobs:
         if: steps.build-step.outcome == 'failure'
         shell: bash
         run: |
-          echo "::group::CMake Error Logs" >&2
+          echo "::group::CMake Error Logs"
 
           # Print main CMake error logs if they exist
           if [ -f "build/CMakeFiles/CMakeError.log" ]; then
-            echo -e "\n===== CMakeError.log =====\n" >&2
-            cat build/CMakeFiles/CMakeError.log >&2
+            echo -e "\n===== CMakeError.log =====\n"
+            cat build/CMakeFiles/CMakeError.log
           fi
 
           # Find and print external project logs
-          for log_file in $(find build -name "config.log" -o -name "*.log" | grep -v "CMakeCache.txt"); do
+          for log_file in $(find build -name "config.log" -o -name "*.log); do
             if [ -f "$log_file" ] && grep -q "error:" "$log_file" || grep -q "configure: error" "$log_file" || grep -q "CMake Error" "$log_file"; then
-              echo -e "\n===== $log_file =====\n" >&2
-              cat "$log_file" >&2
+              echo -e "\n===== $log_file =====\n"
+              cat "$log_file"
             fi
           done
 
-          echo "::endgroup::" >&2
+          echo "::endgroup::"
 
           # Summarize errors
-          echo "::group::Error Summary" >&2
-          echo "Files with errors:" >&2
-          find build -name "*.log" -o -name "config.log" | xargs grep -l "error:" 2>/dev/null || echo "None found" >&2
-          echo "::endgroup::" >&2
+          echo "::group::Error Summary"
+          echo "Files with errors:"
+          find build -name "*.log" -o -name "config.log" | xargs grep -l "error:" 2>/dev/null || echo "None found"
+          echo "::endgroup::"
 
       - name: Upload build logs
         if: steps.build-step.outcome == 'failure'
