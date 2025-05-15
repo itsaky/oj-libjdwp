@@ -71,12 +71,50 @@ jobs:
             .
 
       - name: Build
+        id: build-step
+        continue-on-error: true
         env:
           NDK: ${{ steps.setup-ndk.outputs.ndk-path }}
         shell: bash
         run: |
           export PATH="$NDK/toolchains/llvm/prebuilt/${{ steps.platform-vars.outputs.ndk_platform }}/bin:$PATH"
           ninja -C build
+
+      # Capture and upload build logs on failure
+      - name: Capture build logs
+        if: steps.build-step.outcome == 'failure'
+        shell: bash
+        run: |
+          mkdir -p build-logs
+
+          # Copy CMake logs
+          if [ -d "build/CMakeFiles" ]; then
+            cp build/CMakeFiles/CMakeError.log build-logs/ 2>/dev/null || true
+            cp build/CMakeFiles/CMakeOutput.log build-logs/ 2>/dev/null || true
+          fi
+
+          # Find and copy external project logs
+          find build -name "*.log" -o -name "config.log" -o -name "CMakeError.log" -o -name "CMakeOutput.log" | xargs -I{} cp {} build-logs/ 2>/dev/null || true
+
+          # Create a summary of error logs
+          cd build-logs
+          echo "=== Build Log Summary ===" > error-summary.txt
+          grep -r "error:" --include="*.log" . >> error-summary.txt 2>/dev/null || true
+          grep -r "CMake Error" --include="*.log" . >> error-summary.txt 2>/dev/null || true
+          grep -r "configure: error" --include="*.log" . >> error-summary.txt 2>/dev/null || true
+          echo "Log files captured: $(ls | wc -l)" >> error-summary.txt
+
+      - name: Upload build logs
+        if: steps.build-step.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ matrix.os }}-${{ matrix.abi }}
+          path: build-logs/
+
+      - name: Check build status
+        if: steps.build-step.outcome == 'failure'
+        shell: bash
+        run: exit 1
 
       - name: Upload
         uses: actions/upload-artifact@v4
