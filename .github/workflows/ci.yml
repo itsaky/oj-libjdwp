@@ -88,29 +88,33 @@ jobs:
           export PATH="$NDK/toolchains/llvm/prebuilt/${{ steps.platform-vars.outputs.ndk_platform }}/bin:$PATH"
           ninja -C build
 
-      # Capture and upload build logs on failure
-      - name: Capture build logs
+      - name: Print error logs
         if: steps.build-step.outcome == 'failure'
         shell: bash
         run: |
-          mkdir -p build-logs
+          echo "::group::CMake Error Logs" >&2
 
-          # Copy CMake logs
-          if [ -d "build/CMakeFiles" ]; then
-            cp build/CMakeFiles/CMakeError.log build-logs/ 2>/dev/null || true
-            cp build/CMakeFiles/CMakeOutput.log build-logs/ 2>/dev/null || true
+          # Print main CMake error logs if they exist
+          if [ -f "build/CMakeFiles/CMakeError.log" ]; then
+            echo -e "\n===== CMakeError.log =====\n" >&2
+            cat build/CMakeFiles/CMakeError.log >&2
           fi
 
-          # Find and copy external project logs
-          find build -name "*.log" -o -name "config.log" -o -name "CMakeError.log" -o -name "CMakeOutput.log" | xargs -I{} cp {} build-logs/ 2>/dev/null || true
+          # Find and print external project logs
+          for log_file in $(find build -name "config.log" -o -name "*.log" | grep -v "CMakeCache.txt"); do
+            if [ -f "$log_file" ] && grep -q "error:" "$log_file" || grep -q "configure: error" "$log_file" || grep -q "CMake Error" "$log_file"; then
+              echo -e "\n===== $log_file =====\n" >&2
+              cat "$log_file" >&2
+            fi
+          done
 
-          # Create a summary of error logs
-          cd build-logs
-          echo "=== Build Log Summary ===" > error-summary.txt
-          grep -r "error:" --include="*.log" . >> error-summary.txt 2>/dev/null || true
-          grep -r "CMake Error" --include="*.log" . >> error-summary.txt 2>/dev/null || true
-          grep -r "configure: error" --include="*.log" . >> error-summary.txt 2>/dev/null || true
-          echo "Log files captured: $(ls | wc -l)" >> error-summary.txt
+          echo "::endgroup::" >&2
+
+          # Summarize errors
+          echo "::group::Error Summary" >&2
+          echo "Files with errors:" >&2
+          find build -name "*.log" -o -name "config.log" | xargs grep -l "error:" 2>/dev/null || echo "None found" >&2
+          echo "::endgroup::" >&2
 
       - name: Upload build logs
         if: steps.build-step.outcome == 'failure'
