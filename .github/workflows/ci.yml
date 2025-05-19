@@ -2,12 +2,11 @@ name: Build oj-libjdwp
 on: [push]
 jobs:
   build:
-    name: Build ${{ matrix.os }}-${{ matrix.abi }}
-    runs-on: ${{ matrix.os }}
+    name: Build ${{ matrix.abi }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
         abi:
           - arm64-v8a
           - armeabi-v7a
@@ -18,30 +17,12 @@ jobs:
         uses: actions/checkout@v4.2.2
 
       - name: Install Linux packages
-        if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get install cmake make ninja-build python3
 
-      - name: Install Windows packages
-        if: matrix.os == 'windows-latest'
-        run: |
-          choco install cmake ninja python3
-
-      - name: Install macOS packages
-        if: matrix.os == 'macos-latest'
-        run: brew install cmake ninja python3
-
       - name: Install JDK (Linux/Windows)
-        if: matrix.os != 'macos-latest'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 8
-
-      - name: Install JDK (MacOS)
-        if: matrix.os == 'macos-latest'
-        uses: actions/setup-java@v4
-        with:
-          distribution: zulu
           java-version: 8
 
       - name: Setup NDK
@@ -49,18 +30,6 @@ jobs:
         id: setup-ndk
         with:
           ndk-version: r27c
-
-      - name: Set platform-specific variables
-        id: platform-vars
-        shell: bash
-        run: |
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            echo "ndk_platform=linux-x86_64" >> $GITHUB_OUTPUT
-          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
-            echo "ndk_platform=windows-x86_64" >> $GITHUB_OUTPUT
-          else
-            echo "ndk_platform=darwin-x86_64" >> $GITHUB_OUTPUT
-          fi
 
       - name: CMake Configure
         env:
@@ -85,7 +54,7 @@ jobs:
           NDK: ${{ steps.setup-ndk.outputs.ndk-path }}
         shell: bash
         run: |
-          export PATH="$NDK/toolchains/llvm/prebuilt/${{ steps.platform-vars.outputs.ndk_platform }}/bin:$PATH"
+          export PATH="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH"
           ninja -C build
 
       - name: Print error logs
@@ -98,7 +67,7 @@ jobs:
         if: steps.build-step.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
-          name: build-logs-${{ matrix.os }}-${{ matrix.abi }}
+          name: build-logs-${{ matrix.abi }}
           path: build-logs/
 
       - name: Check build status
@@ -109,7 +78,7 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: oj-libjdwp-${{ matrix.abi }}-${{ matrix.os }}
+          name: oj-libjdwp-${{ matrix.abi }}
           path: |
             build/*.jar
             build/*.so
