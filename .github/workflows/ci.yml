@@ -111,37 +111,87 @@ jobs:
 
       - name: Prepare artifacts for release
         run: |
-          mkdir -p release-info
-          echo "# Available Artifacts" > release-info/ARTIFACTS.md
-          echo "" >> release-info/ARTIFACTS.md
-          echo "| Artifact | MD5 Checksum | SHA-256 Checksum |" >> release-info/ARTIFACTS.md
-          echo "| -------- | ------------ | ---------------- |" >> release-info/ARTIFACTS.md
+          # Create a directory for processed artifacts
+          mkdir -p processed-artifacts
 
-          # Create directories for checksums
+          # Create a directory for listings and checksums
+          mkdir -p release-info
           mkdir -p release-info/checksums/md5
           mkdir -p release-info/checksums/sha256
 
-          # Generate checksums for release description
+          # Initialize markdown files
+          echo "# Available Artifacts" > release-info/ARTIFACTS.md
+          echo "" >> release-info/ARTIFACTS.md
+          echo "| Artifact | Platform | MD5 Checksum | SHA-256 Checksum |" >> release-info/ARTIFACTS.md
+          echo "| -------- | -------- | ------------ | ---------------- |" >> release-info/ARTIFACTS.md
+
           echo "## File Checksums" > release-info/CHECKSUMS.md
           echo "" >> release-info/CHECKSUMS.md
-          echo "| Artifact | MD5 Checksum | SHA-256 Checksum |" >> release-info/CHECKSUMS.md
-          echo "| -------- | ------------ | ---------------- |" >> release-info/CHECKSUMS.md
+          echo "| Artifact | Platform | MD5 Checksum | SHA-256 Checksum |" >> release-info/CHECKSUMS.md
+          echo "| -------- | -------- | ------------ | ---------------- |" >> release-info/CHECKSUMS.md
 
-          # Generate checksums for all artifacts
-          find release-artifacts -type f -name "*.jar" -o -name "*.so" -o -name "*.a" | sort | while read file; do
+          # Process JAR files first (platform-independent)
+          echo "Processing platform-independent files..."
+          find release-artifacts -name "*.jar" | while read file; do
             FILENAME=$(basename "$file")
-            MD5=$(md5sum "$file" | awk '{print $1}')
-            SHA256=$(sha256sum "$file" | awk '{print $1}')
+            # Check if we already processed this JAR (by name)
+            if [ ! -f "processed-artifacts/$FILENAME" ]; then
+              echo "Adding platform-independent file: $FILENAME"
+              
+              # Copy to processed directory
+              cp "$file" "processed-artifacts/$FILENAME"
+              
+              # Calculate checksums
+              MD5=$(md5sum "processed-artifacts/$FILENAME" | awk '{print $1}')
+              SHA256=$(sha256sum "processed-artifacts/$FILENAME" | awk '{print $1}')
+              
+              # Add to listings
+              echo "| $FILENAME | platform-independent | \`$MD5\` | \`$SHA256\` |" >> release-info/ARTIFACTS.md
+              echo "| $FILENAME | platform-independent | \`$MD5\` | \`$SHA256\` |" >> release-info/CHECKSUMS.md
+              
+              # Create checksum files
+              echo "$MD5  $FILENAME" > "release-info/checksums/md5/$FILENAME.md5"
+              echo "$SHA256  $FILENAME" > "release-info/checksums/sha256/$FILENAME.sha256"
+            fi
+          done
 
-            # Add to ARTIFACTS.md
-            echo "| $FILENAME | \`$MD5\` | \`$SHA256\` |" >> release-info/ARTIFACTS.md
-
-            # Add to CHECKSUMS.md
-            echo "| $FILENAME | \`$MD5\` | \`$SHA256\` |" >> release-info/CHECKSUMS.md
-
-            # Create individual checksum files
-            echo "$MD5  $FILENAME" > release-info/checksums/md5/$FILENAME.md5
-            echo "$SHA256  $FILENAME" > release-info/checksums/sha256/$FILENAME.sha256
+          # Process native libraries (platform-specific)
+          echo "Processing platform-specific files..."
+          find release-artifacts -type f \( -name "*.so" -o -name "*.a" \) | while read file; do
+            FILENAME=$(basename "$file")
+            
+            # Determine platform
+            if [[ "$file" == *"arm64-v8a"* ]]; then
+              PLATFORM="arm64-v8a"
+            elif [[ "$file" == *"armeabi-v7a"* ]]; then
+              PLATFORM="armeabi-v7a"
+            elif [[ "$file" == *"x86_64"* ]]; then
+              PLATFORM="x86_64"
+            elif [[ "$file" == *"x86"* ]]; then
+              PLATFORM="x86"
+            else
+              PLATFORM="unknown"
+            fi
+            
+            # Add platform prefix to filename to avoid collisions
+            PLATFORM_FILENAME="${PLATFORM}-${FILENAME}"
+            
+            echo "Adding platform-specific file: $PLATFORM_FILENAME"
+            
+            # Copy to processed directory with platform prefix
+            cp "$file" "processed-artifacts/$PLATFORM_FILENAME"
+            
+            # Calculate checksums
+            MD5=$(md5sum "processed-artifacts/$PLATFORM_FILENAME" | awk '{print $1}')
+            SHA256=$(sha256sum "processed-artifacts/$PLATFORM_FILENAME" | awk '{print $1}')
+            
+            # Add to listings
+            echo "| $PLATFORM_FILENAME | $PLATFORM | \`$MD5\` | \`$SHA256\` |" >> release-info/ARTIFACTS.md
+            echo "| $PLATFORM_FILENAME | $PLATFORM | \`$MD5\` | \`$SHA256\` |" >> release-info/CHECKSUMS.md
+            
+            # Create checksum files
+            echo "$MD5  $PLATFORM_FILENAME" > "release-info/checksums/md5/$PLATFORM_FILENAME.md5"
+            echo "$SHA256  $PLATFORM_FILENAME" > "release-info/checksums/sha256/$PLATFORM_FILENAME.sha256"
           done
 
       - name: Create Release
@@ -156,9 +206,7 @@ jobs:
             release-info/ARTIFACTS.md
             release-info/checksums/md5/*.md5
             release-info/checksums/sha256/*.sha256
-            release-artifacts/**/*.jar
-            release-artifacts/**/*.so
-            release-artifacts/**/*.a
+            processed-artifacts/*
           body: |
             Release of oj-libjdwp version ${{ steps.get_version.outputs.version }}
 
