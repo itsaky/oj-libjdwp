@@ -217,7 +217,5 @@ jobs:
             - x86_64
 
             Built from commit: ${{ github.sha }}
-
-            $(cat release-info/CHECKSUMS.md)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
