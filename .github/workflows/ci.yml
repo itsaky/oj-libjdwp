@@ -116,3 +116,91 @@ jobs:
             build/*.a
             build/libiconv/lib/*.so
             build/libiconv/lib/*.a
+
+  release:
+    name: Create Release
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Get version from git tag
+        id: get_version
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          DATE=$(date '+%Y-%m-%d')
+          echo "version=$DATE-$SHORT_SHA" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Prepare artifacts for release
+        run: |
+          mkdir -p release-info
+          echo "# Available Artifacts" > release-info/ARTIFACTS.md
+          echo "" >> release-info/ARTIFACTS.md
+          echo "| Artifact | MD5 Checksum | SHA-256 Checksum |" >> release-info/ARTIFACTS.md
+          echo "| -------- | ------------ | ---------------- |" >> release-info/ARTIFACTS.md
+
+          # Create directories for checksums
+          mkdir -p release-info/checksums/md5
+          mkdir -p release-info/checksums/sha256
+
+          # Generate checksums for release description
+          echo "## File Checksums" > release-info/CHECKSUMS.md
+          echo "" >> release-info/CHECKSUMS.md
+          echo "| Artifact | MD5 Checksum | SHA-256 Checksum |" >> release-info/CHECKSUMS.md
+          echo "| -------- | ------------ | ---------------- |" >> release-info/CHECKSUMS.md
+
+          # Generate checksums for all artifacts
+          find release-artifacts -type f -name "*.jar" -o -name "*.so" -o -name "*.a" | sort | while read file; do
+            FILENAME=$(basename "$file")
+            MD5=$(md5sum "$file" | awk '{print $1}')
+            SHA256=$(sha256sum "$file" | awk '{print $1}')
+
+            # Add to ARTIFACTS.md
+            echo "| $FILENAME | \`$MD5\` | \`$SHA256\` |" >> release-info/ARTIFACTS.md
+
+            # Add to CHECKSUMS.md
+            echo "| $FILENAME | \`$MD5\` | \`$SHA256\` |" >> release-info/CHECKSUMS.md
+
+            # Create individual checksum files
+            echo "$MD5  $FILENAME" > release-info/checksums/md5/$FILENAME.md5
+            echo "$SHA256  $FILENAME" > release-info/checksums/sha256/$FILENAME.sha256
+          done
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: oj-libjdwp-${{ steps.get_version.outputs.version }}
+          tag_name: v${{ steps.get_version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            release-info/ARTIFACTS.md
+            release-info/checksums/md5/*.md5
+            release-info/checksums/sha256/*.sha256
+            release-artifacts/**/*.jar
+            release-artifacts/**/*.so
+            release-artifacts/**/*.a
+          body: |
+            Release of oj-libjdwp version ${{ steps.get_version.outputs.version }}
+
+            This automated release contains pre-built binaries for:
+            - arm64-v8a
+            - armeabi-v7a
+            - x86
+            - x86_64
+
+            Built from commit: ${{ github.sha }}
+
+            $(cat release-info/CHECKSUMS.md)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
