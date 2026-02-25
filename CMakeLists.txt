@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.30)
+project(oj-libjdwp)
 
 find_package(Python3 REQUIRED)
 
 include(make/cmake/java.cmake)
 include(make/cmake/libiconv.cmake)
 
-project(oj-libjdwp)
+option(BUILD_FAT_LIB "Whether or not to build a independent (fat) shared library" OFF)
 
 # Build jdwpgen.jar
 file(GLOB JDWPGEN_SOURCES make/src/classes/build/tools/jdwpgen/*.java)
@@ -58,20 +59,21 @@ set(JDWP_HEADERS src/share/back
     src/solaris/back
     ${JDWP_GEN_HEADERS})
 
-# Build libnpt
+# Build npt obj
 file(GLOB NPT_SOURCES src/share/npt/*.c src/solaris/npt/*.c)
-add_library(npt SHARED ${NPT_SOURCES})
-include_directories(npt ${JAVA_VM_HEADERS} ${NPT_HEADERS})
-target_link_libraries(npt iconv log)
-target_compile_options(npt PRIVATE ${C_FLAGS})
+add_library(npt_obj OBJECT ${NPT_SOURCES})
+include_directories(npt_obj ${JAVA_VM_HEADERS} ${NPT_HEADERS})
+target_link_libraries(npt_obj iconv log)
+target_compile_options(npt_obj PRIVATE ${C_FLAGS})
+set_property(TARGET npt_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-# Build libjdwp
+# Build jdwp
 file(GLOB JDWP_SOURCES src/share/back/*.c src/solaris/back/*.c)
-add_library(jdwp SHARED ${JDWP_SOURCES})
-add_dependencies(jdwp jdwpgen_includes jdwpgen_jdi)
-include_directories(jdwp ${JDWP_HEADERS})
-target_link_libraries(jdwp log)
-target_compile_options(jdwp PRIVATE
+add_library(jdwp_obj OBJECT ${JDWP_SOURCES})
+add_dependencies(jdwp_obj jdwpgen_includes jdwpgen_jdi)
+include_directories(jdwp_obj ${JDWP_HEADERS})
+target_link_libraries(jdwp_obj log)
+target_compile_options(jdwp_obj PRIVATE
     ${C_FLAGS}
     -DLINUX
     -DJDWP_LOGGING
@@ -82,17 +84,40 @@ target_compile_options(jdwp PRIVATE
     -Wno-self-assign
     -Wno-unused-variable
     -Wno-unused-function)
+set_property(TARGET jdwp_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # Build libdt_socket
 file(GLOB DTSOCKET_SOURCES src/share/transport/socket/*.c src/solaris/transport/socket/*.c)
-add_library(dt_socket SHARED ${DTSOCKET_SOURCES})
-add_dependencies(dt_socket jdwpgen_includes)
-target_link_libraries(dt_socket log)
-include_directories(dt_socket src/share/transport/socket
+add_library(dt_socket_obj OBJECT ${DTSOCKET_SOURCES})
+add_dependencies(dt_socket_obj jdwpgen_includes)
+target_link_libraries(dt_socket_obj log)
+include_directories(dt_socket_obj src/share/transport/socket
     src/solaris/transport/socket
     ${JAVA_VM_HEADERS}
     ${JDWP_HEADERS}
     ${NPT_HEADERS})
+
+set_property(TARGET dt_socket_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+add_library(npt SHARED $<TARGET_OBJECTS:npt_obj>)
+target_link_libraries(npt iconv log)
+
+add_library(jdwp SHARED $<TARGET_OBJECTS:jdwp_obj>)
+target_link_libraries(jdwp log)
+
+add_library(dt_socket SHARED $<TARGET_OBJECTS:dt_socket_obj>)
+target_link_libraries(dt_socket log)
+
+if(BUILD_FAT_LIB)
+    add_library(jdwp_fat SHARED
+        $<TARGET_OBJECTS:npt_obj>
+        $<TARGET_OBJECTS:jdwp_obj>
+        $<TARGET_OBJECTS:dt_socket_obj>)
+
+    target_link_libraries(jdwp_fat iconv log)
+
+    target_compile_definitions(jdwp_fat PRIVATE JDWP_FAT_BUILD)
+endif()
 
 # Build jdi-support
 file(GLOB_RECURSE JDI_SUPPORT_SOURCES
