@@ -30,6 +30,7 @@
 
 #include <android/log.h>
 
+#include "dt_socket_extern.h"
 #include "jdwpTransport.h"
 #include "sysSocket.h"
 
@@ -757,3 +758,9 @@ jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
     tlsIndex = dbgsysTlsAlloc();
     return JNI_OK;
 }
+
+JNIEXPORT jint JNICALL
+socketTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
+                         jint version, jdwpTransportEnv** result) {
+                            return jdwpTransport_OnLoad(vm, cbTablePtr, version, result);
+                         }

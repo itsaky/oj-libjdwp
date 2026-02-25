@@ -38,7 +38,7 @@
 #include "npt_md.h"
 #include "utf.h"
 
-#define NPT_ERROR(s) { (void)__android_log_print(ANDROID_LOG_ERROR, "LocalJDWP-NPT", "NPT ERROR: %s\n", s); exit(1); }
+#define NPT_ERROR(s) { (void)__android_log_print(ANDROID_LOG_ERROR, "COTG-JDWP-NPT", "NPT ERROR: %s\n", s); exit(1); }
 
 #ifdef __cplusplus
 extern "C" {

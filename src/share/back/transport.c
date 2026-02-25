@@ -28,6 +28,10 @@
 #include "debugLoop.h"
 #include "sys.h"
 
+#ifdef JDWP_FAT_BUILD
+#include "dt_socket_extern.h"
+#endif
+
 static jdwpTransportEnv *transport;
 static jrawMonitorID listenerLock;
 static jrawMonitorID sendLock;
@@ -135,14 +139,24 @@ loadTransport(const char *name, jdwpTransportEnv **transportPtr)
 {
     JNIEnv                 *env;
     jdwpTransport_OnLoad_t  onLoad;
-    void                   *handle;
-    const char             *libdir;
 
     /* Make sure library name is not empty */
     if (name == NULL) {
         ERROR_MESSAGE(("library name is empty"));
         return JDWP_ERROR(TRANSPORT_LOAD);
     }
+
+#ifdef JDWP_FAT_BUILD
+    if (strcmp(name, "dt_socket") == 0) {
+        onLoad = &socketTransport_OnLoad;
+    } else {
+        ERROR_MESSAGE(("unknown transport library: %s", name));
+        return JDWP_ERROR(TRANSPORT_LOAD);
+    }
+#else
+
+    void                   *handle;
+    const char             *libdir;
 
     /* First, look in sun.boot.library.path. This should find the standard
      *  dt_socket and dt_shmem transport libraries, or any library
@@ -185,6 +199,8 @@ loadTransport(const char *name, jdwpTransportEnv **transportPtr)
         ERROR_MESSAGE(("transport library missing onLoad entry: %s", name));
         return JDWP_ERROR(TRANSPORT_LOAD);
     }
+
+#endif // JDWP_FAT_BUILD
 
     /* Get transport interface */
     env = getEnv();

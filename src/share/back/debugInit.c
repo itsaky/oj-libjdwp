@@ -47,6 +47,11 @@
 // ANDROID-CHANGED: Need to sent metrics before debugInit_exit
 #include "timing.h"
 
+// COTG-CHANGED: Fat build support
+#ifdef JDWP_FAT_BUILD
+#include "npt.h"
+#endif
+
 /* How the options get to OnLoad: */
 #define XDEBUG "-Xdebug"
 #define XRUN "-Xrunjdwp"
@@ -343,7 +348,11 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
     // ANDROID-CHANGED: Load libnpt.so with no path to use the system linker config to find it.
     dbgsysBuildLibName(npt_lib, sizeof(npt_lib), "", NPT_LIBNAME);
     /* Npt and Utf function init */
+#ifdef JDWP_FAT_BUILD
+    nptInitialize(&(gdata->npt), NPT_VERSION, NULL);
+#else
     NPT_INITIALIZE(npt_lib, &(gdata->npt), NPT_VERSION, NULL);
+#endif
     if (gdata->npt == NULL) {
         ERROR_MESSAGE(("JDWP: unable to initialize NPT library"));
         return JNI_ERR;
