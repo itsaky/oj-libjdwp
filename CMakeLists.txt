@@ -59,6 +59,18 @@ set(JDWP_HEADERS src/share/back
     src/solaris/back
     ${JDWP_GEN_HEADERS})
 
+set(JDWP_CFLAGS
+    -DLINUX
+    -DJDWP_LOGGING
+    -Wno-switch
+    -Wno-logical-op-parentheses
+    -Wno-logical-not-parentheses
+    -Wno-sometimes-uninitialized
+    -Wno-self-assign
+    -Wno-unused-variable
+    -Wno-unused-function
+)
+
 # Build npt obj
 file(GLOB NPT_SOURCES src/share/npt/*.c src/solaris/npt/*.c)
 add_library(npt_obj OBJECT ${NPT_SOURCES})
@@ -75,15 +87,8 @@ include_directories(jdwp_obj ${JDWP_HEADERS})
 target_link_libraries(jdwp_obj log)
 target_compile_options(jdwp_obj PRIVATE
     ${C_FLAGS}
-    -DLINUX
-    -DJDWP_LOGGING
-    -Wno-switch
-    -Wno-logical-op-parentheses
-    -Wno-logical-not-parentheses
-    -Wno-sometimes-uninitialized
-    -Wno-self-assign
-    -Wno-unused-variable
-    -Wno-unused-function)
+    ${JDWP_CFLAGS})
+
 set_property(TARGET jdwp_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # Build libdt_socket
@@ -110,12 +115,29 @@ target_link_libraries(dt_socket log)
 
 if(BUILD_FAT_LIB)
     add_library(jdwp_fat SHARED
-        $<TARGET_OBJECTS:npt_obj>
-        $<TARGET_OBJECTS:jdwp_obj>
-        $<TARGET_OBJECTS:dt_socket_obj>)
+        ${NPT_SOURCES}
+        ${JDWP_SOURCES}
+        ${DTSOCKET_SOURCES})
+
+    add_dependencies(jdwp_fat
+        jdwpgen_includes
+        jdwpgen_jdi
+        npt_obj
+        jdwp_obj
+        dt_socket_obj
+    )
+    
+    include_directories(jdwp_fat src/share/transport/socket
+        src/solaris/transport/socket
+        ${JAVA_VM_HEADERS}
+        ${JDWP_HEADERS}
+        ${NPT_HEADERS})
+
+    target_compile_options(jdwp_fat PRIVATE
+        ${C_FLAGS}
+        ${JDWP_CFLAGS})
 
     target_link_libraries(jdwp_fat iconv log)
-
     target_compile_definitions(jdwp_fat PRIVATE JDWP_FAT_BUILD)
 endif()
 
